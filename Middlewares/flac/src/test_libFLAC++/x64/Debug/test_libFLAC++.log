@@ -1,0 +1,8 @@
+﻿  decoders.cpp
+  encoders.cpp
+  main.cpp
+  metadata.cpp
+  metadata_manip.cpp
+  metadata_object.cpp
+  正在生成代码...
+LINK : fatal error LNK1104: 无法打开文件“D:\Code\github\flac\objs\x64\Debug\lib\libogg_static.lib”

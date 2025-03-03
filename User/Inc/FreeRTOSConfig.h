@@ -24,6 +24,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_RECURSIVE_MUTEXES                     1                       /* 1: 使能递归互斥信号量, 默认: 0 */
 #define configUSE_COUNTING_SEMAPHORES                   1                       /* 1: 使能计数信号量, 默认: 0 */
 #define configUSE_ALTERNATIVE_API                       0                       /* 已弃用!!! */
+#define configUSE_STREAM_BUFFERS                        1                       /* 启用流式缓冲区 */
 #define configQUEUE_REGISTRY_SIZE                       8                       /* 定义可以注册的信号量和消息队列的个数, 默认: 0 */
 #define configUSE_QUEUE_SETS                            1                       /* 1: 使能队列集, 默认: 0 */
 #define configUSE_TIME_SLICING                          1                       /* 1: 使能时间片调度, 默认: 1 */

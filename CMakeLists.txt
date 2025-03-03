@@ -66,6 +66,7 @@ file(GLOB USER_SRC
     Drivers/BSP/gt911/gt911.c
     Drivers/BSP/sw_i2c/sw_i2c.c
     Drivers/BSP/audio/*.c
+    Drivers/BSP/mmalloc/*.c
 )
 
 # Add sources to executable
@@ -89,6 +90,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/BSP/gt911
     Drivers/BSP/sw_i2c
     Drivers/BSP/audio
+    Drivers/BSP/mmalloc
 )
 
 # Add project symbols (macros)
@@ -96,6 +98,8 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
     USE_HAL_DRIVER 
 	STM32H750xx
+    HAVE_CONFIG_H
+    HAVE_LROUND
     $<$<CONFIG:Debug>:DEBUG>
 )
 

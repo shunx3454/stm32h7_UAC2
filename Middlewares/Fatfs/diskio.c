@@ -39,7 +39,7 @@ DSTATUS disk_initialize(
 {
 	if (pdrv == DEV_SDCard)
 	{
-		if (g_sdio1.State != HAL_SD_STATE_RESET)
+		if (sdio_init() == 0)
 		{
 			return RES_OK;
 		}

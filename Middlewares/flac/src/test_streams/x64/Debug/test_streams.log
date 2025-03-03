@@ -1,0 +1,6 @@
+﻿  main.c
+D:\Code\github\flac\src\test_streams\main.c(110,9): warning C4244: “函数”: 从“FLAC__uint64”转换到“int”，可能丢失数据
+D:\Code\github\flac\src\test_streams\main.c(111,11): warning C4244: “函数”: 从“FLAC__uint64”转换到“int”，可能丢失数据
+D:\Code\github\flac\src\test_streams\main.c(112,11): warning C4244: “函数”: 从“FLAC__uint64”转换到“int”，可能丢失数据
+D:\Code\github\flac\src\test_streams\main.c(113,11): warning C4244: “函数”: 从“FLAC__uint64”转换到“int”，可能丢失数据
+LINK : fatal error LNK1104: 无法打开文件“D:\Code\github\flac\objs\x64\Debug\lib\libFLAC_static.lib”

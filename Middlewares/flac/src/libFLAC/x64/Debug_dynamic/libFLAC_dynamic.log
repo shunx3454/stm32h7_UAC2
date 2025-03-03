@@ -1,0 +1,84 @@
+﻿  bitmath.c
+  bitreader.c
+  bitwriter.c
+  cpu.c
+  crc.c
+  fixed.c
+  fixed_intrin_sse2.c
+  fixed_intrin_ssse3.c
+  float.c
+  format.c
+  lpc.c
+D:\Code\github\flac\src\libFLAC\format.c(580,87): warning C4334: “<<”: 32 位移位的结果被隐式转换为 64 位(是否希望进行 64 位移位?)
+D:\Code\github\flac\src\libFLAC\format.c(582,83): warning C4334: “<<”: 32 位移位的结果被隐式转换为 64 位(是否希望进行 64 位移位?)
+D:\Code\github\flac\src\libFLAC\format.c(584,51): warning C4334: “<<”: 32 位移位的结果被隐式转换为 64 位(是否希望进行 64 位移位?)
+  lpc_intrin_sse.c
+  lpc_intrin_sse2.c
+  lpc_intrin_sse41.c
+  md5.c
+  memory.c
+  metadata_iterators.c
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(579,25): warning C4244: “return”: 从“const __int64”转换到“off_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1117,33): warning C4244: “+=”: 从“const __int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1129,44): warning C4244: “=”: 从“__int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1152,35): warning C4244: “-=”: 从“const __int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1647,34): warning C4244: “=”: 从“__int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1652,37): warning C4244: “=”: 从“__int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\metadata_iterators.c(1666,36): warning C4244: “=”: 从“const __int64”转换到“uint32_t”，可能丢失数据
+  metadata_object.c
+D:\Code\github\flac\src\libFLAC\metadata_object.c(1127,28): warning C4244: “=”: 从“FLAC__uint64”转换到“uint32_t”，可能丢失数据
+  ogg_decoder_aspect.c
+  ogg_encoder_aspect.c
+D:\Code\github\flac\src\libFLAC\include\private\ogg_decoder_aspect.h(36,10): error C1083: 无法打开包括文件: “ogg/ogg.h”: No such file or directory
+  (编译源文件“ogg_decoder_aspect.c”)
+  
+D:\Code\github\flac\src\libFLAC\include\private\ogg_encoder_aspect.h(36,10): error C1083: 无法打开包括文件: “ogg/ogg.h”: No such file or directory
+  (编译源文件“ogg_encoder_aspect.c”)
+  
+  正在生成代码...
+  正在编译...
+  ogg_helper.c
+D:\Code\github\flac\src\libFLAC\include\private\ogg_helper.h(36,10): error C1083: 无法打开包括文件: “ogg/ogg.h”: No such file or directory
+  (编译源文件“ogg_helper.c”)
+  
+  ogg_mapping.c
+  stream_decoder.c
+D:\Code\github\flac\src\libFLAC\include\private\ogg_decoder_aspect.h(36,10): error C1083: 无法打开包括文件: “ogg/ogg.h”: No such file or directory
+  (编译源文件“stream_decoder.c”)
+  
+  stream_encoder.c
+D:\Code\github\flac\src\libFLAC\include\private\ogg_encoder_aspect.h(36,10): error C1083: 无法打开包括文件: “ogg/ogg.h”: No such file or directory
+  (编译源文件“stream_encoder.c”)
+  
+  stream_encoder_framing.c
+  stream_encoder_intrin_sse2.c
+  stream_encoder_intrin_ssse3.c
+  window.c
+D:\Code\github\flac\src\libFLAC\window.c(71,101): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(80,64): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(80,100): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(90,71): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(90,110): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(90,149): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(112,77): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(112,120): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(112,163): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(112,206): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(133,65): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(142,63): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(151,67): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(151,104): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(151,141): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(160,68): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(160,101): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(160,134): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(203,58): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(204,70): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(228,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(232,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(254,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(258,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(262,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+D:\Code\github\flac\src\libFLAC\window.c(266,57): warning C4244: “函数”: 从“double”转换到“float”，可能丢失数据
+  windows_unicode_filenames.c
+  正在生成代码...

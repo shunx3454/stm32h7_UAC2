@@ -14,6 +14,18 @@ file(GLOB CHERRY_USB_SOURCE
     Middlewares/CherryUSB/class/audio/usbd_audio.c
 )
 
+file(GLOB LIBFLAC_SRC 
+    Middlewares/flac/src/libFLAC/bitreader.c
+    Middlewares/flac/src/libFLAC/crc.c
+    Middlewares/flac/src/libFLAC/format.c
+    Middlewares/flac/src/libFLAC/lpc.c
+    Middlewares/flac/src/libFLAC/md5.c
+    Middlewares/flac/src/libFLAC/stream_decoder.c
+    Middlewares/flac/src/libFLAC/memory.c
+    Middlewares/flac/src/libFLAC/fixed.c
+    Middlewares/flac/src/libFLAC/cpu.c
+)
+
 
 file(GLOB MIDDLEWARES_SRC 
     Middlewares/Fatfs/*.c
@@ -22,6 +34,7 @@ file(GLOB MIDDLEWARES_SRC
     Middlewares/FreeRTOS/portable/GCC/ARM_CM4F/port.c
     ${LVGL_SOURCE}
     ${CHERRY_USB_SOURCE}
+    ${LIBFLAC_SRC}
 )
 
 set(MIDDLEWARES_INC 
@@ -34,4 +47,7 @@ set(MIDDLEWARES_INC
     Middlewares/CherryUSB/class/cdc
     Middlewares/CherryUSB/class/msc
     Middlewares/CherryUSB/class/audio
+    Middlewares/flac/include
+    Middlewares/flac/src/libFLAC/include
+    Middlewares/flac/src/libFLAC/include/private
 )

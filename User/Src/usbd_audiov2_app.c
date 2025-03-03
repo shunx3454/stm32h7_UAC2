@@ -191,7 +191,7 @@ void usbd_audio_open(uint8_t busid, uint8_t intf) {
   rx_flag = 1;
   /* setup first out ep read transfer */
   usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
-  i2s_send_async(read_buffer, AUDIO_OUT_PACKET);
+  i2s_send_buf(read_buffer, AUDIO_OUT_PACKET);
   USB_LOG_RAW("OPEN\r\n");
 }
 
@@ -209,7 +209,7 @@ void usbd_audio_get_sampling_freq_table(uint8_t busid, uint8_t ep, uint8_t **sam
 void usbd_audio_iso_out_callback(uint8_t busid, uint8_t ep, uint32_t nbytes) {
   // USB_LOG_RAW("actual out len:%d\r\n", nbytes);
   usbd_ep_start_read(busid, AUDIO_OUT_EP, read_buffer, AUDIO_OUT_PACKET);
-  i2s_send_async(read_buffer, AUDIO_OUT_PACKET);
+  i2s_send_buf(read_buffer, AUDIO_OUT_PACKET);
 }
 
 static struct usbd_endpoint audio_out_ep = {.ep_cb = usbd_audio_iso_out_callback, .ep_addr = AUDIO_OUT_EP};
@@ -232,5 +232,5 @@ void audio_v2_init(uint8_t busid, uintptr_t reg_base) {
 }
 
 void audio_v2_loop(uint8_t busid) {
-  i2s_send_sync(read_buffer, AUDIO_OUT_PACKET);
+
 }

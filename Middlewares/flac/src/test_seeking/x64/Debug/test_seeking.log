@@ -1,0 +1,4 @@
+﻿  main.c
+D:\Code\github\flac\src\test_seeking\main.c(151,35): warning C4244: “=”: 从“__int64”转换到“uint32_t”，可能丢失数据
+D:\Code\github\flac\src\test_seeking\main.c(323,20): warning C4244: “=”: 从“__int64”转换到“long”，可能丢失数据
+LINK : fatal error LNK1104: 无法打开文件“D:\Code\github\flac\objs\x64\Debug\lib\libogg_static.lib”

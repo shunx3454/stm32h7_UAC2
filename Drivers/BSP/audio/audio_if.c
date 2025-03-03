@@ -1,37 +1,28 @@
 #include "audio_if.h"
-#include "FreeRTOS.h"
-#include "bord_config.h"
-#include "queue.h"
-#include "task.h"
+
 #include <string.h>
 
-#define I2S_QUEUE_LENGTH 16U
-#define I2S_QUEUE_ITEM_SIZE 192U
+#include "FreeRTOS.h"
+#include "stream_buffer.h"
+#include "task.h"
 
-enum I2S_QUEUE_STATUS {
-  I2S_QUEUE_RESET,
-  I2S_QUEUE_READY,
-  I2S_QUEUE_POLLING,
-  I2S_QUEUE_PAUSE,
-  I2S_QUEUE_ERROR,
-  I2S_QUEUE_BUSY
-};
+#include "bord_config.h"
+#include "periph.h"
+
+#define I2S_STREAMBUFFER_SIZE (32 * 1024UL)
+#define I2S_DMA_BUFFER_MAX_SIZE (4096UL)
+
+uint8_t i2s_static_stream_bufffer_area[I2S_STREAMBUFFER_SIZE] __ATTR_SDRAM __ALIGNED(4);
+uint8_t i2s_dma_buf0[I2S_DMA_BUFFER_MAX_SIZE] __ATTR_SDRAM __ALIGNED(4);
+uint8_t i2s_dma_buf1[I2S_DMA_BUFFER_MAX_SIZE] __ATTR_SDRAM __ALIGNED(4);
 
 I2S_HandleTypeDef g_i2s1;
 DMA_HandleTypeDef g_dma_i2s1;
-TaskHandle_t TaskI2sLoop = NULL;
-QueueHandle_t Queue_I2S = NULL;
-StaticQueue_t xStaticI2sQueue;
-__IO int I2sQueueState = I2S_QUEUE_RESET;
-int i2s_mode = I2S_SYNC_MODE;
-int buf_reserve = 0;
+StaticStreamBuffer_t i2s_static_stream_buffer;
+StreamBufferHandle_t i2s_stream_buffer_handle;
+__IO uint16_t rx_stream_not_enough = 0;
+__IO uint16_t i2s_dma_trans_size = 0;
 
-char I2sQueueStorageArea[I2S_QUEUE_LENGTH * I2S_QUEUE_ITEM_SIZE] __ALIGNED(4) __ATTR_SDRAM;
-char i2s_buf0[I2S_QUEUE_ITEM_SIZE] __ALIGNED(4) __ATTR_SDRAM;
-char i2s_buf1[I2S_QUEUE_ITEM_SIZE] __ALIGNED(4) __ATTR_SDRAM;
-char i2s_buf2[I2S_QUEUE_ITEM_SIZE] __ALIGNED(4) __ATTR_SDRAM;
-
-void thread_i2s_loop(void *param);
 void BSP_I2S_MspInitCallback(I2S_HandleTypeDef *hi2s);
 void i2s_dma_buf0_cplt(DMA_HandleTypeDef *hdma);
 void i2s_dma_buf1_cplt(DMA_HandleTypeDef *hdma);
@@ -67,7 +58,7 @@ void i2s_dma_config_default(DMA_InitTypeDef *dma_config) {
   dma_config->PeriphBurst = DMA_MBURST_SINGLE;
 }
 
-void i2s_init(I2S_InitTypeDef *i2s_config, DMA_InitTypeDef *dma_config, enum I2S_MODE I2sMode) {
+void i2s_init(I2S_InitTypeDef *i2s_config, DMA_InitTypeDef *dma_config) {
   g_i2s1.Instance = SPI1;
   g_i2s1.Init.Mode = i2s_config->Mode;
   g_i2s1.Init.Standard = i2s_config->Standard;
@@ -84,8 +75,6 @@ void i2s_init(I2S_InitTypeDef *i2s_config, DMA_InitTypeDef *dma_config, enum I2S
   if (HAL_I2S_Init(&g_i2s1) != HAL_OK) {
     Error_Handler();
   }
-
-  i2s_mode = I2sMode;
 
   /* I2S1 DMA Init */
   /* DMA controller clock enable */
@@ -118,143 +107,87 @@ void i2s_init(I2S_InitTypeDef *i2s_config, DMA_InitTypeDef *dma_config, enum I2S
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
 
   /* Regist Callback */
-  if (i2s_mode == I2S_ASYNC_MODE) {
-    HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_CPLT_CB_ID, i2s_dma_buf0_cplt);
-    HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_M1CPLT_CB_ID, i2s_dma_buf1_cplt);
-    HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_ERROR_CB_ID, i2s_dma_error);
-  }
+  HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_CPLT_CB_ID, i2s_dma_buf0_cplt);
+  HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_M1CPLT_CB_ID, i2s_dma_buf1_cplt);
+  HAL_DMA_RegisterCallback(&g_dma_i2s1, HAL_DMA_XFER_ERROR_CB_ID, i2s_dma_error);
 }
 
-int i2s_start(void) {
-  if (i2s_mode == I2S_SYNC_MODE)
-    return 0;
-
-  // Create queue
-  if (Queue_I2S == NULL) {
-    Queue_I2S = xQueueCreateStatic(I2S_QUEUE_LENGTH, I2S_QUEUE_ITEM_SIZE, I2sQueueStorageArea, &xStaticI2sQueue);
-    if (Queue_I2S == NULL) {
-      return -1;
-    }
-  }
-
-  // Create i2s task
-  if (TaskI2sLoop == NULL) {
-    if (xTaskCreate(thread_i2s_loop, "i2s_loop", 512, NULL, 5, &TaskI2sLoop) != pdPASS || TaskI2sLoop == NULL) {
-      return -2;
-    }
-  }
-
-  // start dma double buffer
-  if (HAL_I2S_Transmit_DMAEx_MultiBuffer(&g_i2s1, i2s_buf0, i2s_buf1, I2S_QUEUE_ITEM_SIZE / 2) != HAL_OK) {
-    return -3;
-  }
-  return 0;
-}
-
-void thread_i2s_loop(void *param) {
-  for (;;) {
-    if (uxQueueMessagesWaiting(Queue_I2S) > 1 && (I2sQueueState == I2S_QUEUE_PAUSE)) {
-      I2sQueueState = I2S_QUEUE_BUSY;
-      printf("i2s resume\r\n");
-      HAL_I2S_DMAResume(&g_i2s1);
-    } else if (I2sQueueState == I2S_QUEUE_ERROR) {
-      HAL_I2S_DMAPause(&g_i2s1);
-      printf("i2s error\r\n");
-      vTaskDelay(1000);
-    }
-    vTaskDelay(5);
-  }
-}
-
-int i2s_send_sync(uint8_t *buf, uint32_t size) {
-  HAL_StatusTypeDef state;
-  if (i2s_mode == I2S_ASYNC_MODE) {
-    return -1;
-  }
-
-  if ((state = HAL_I2S_Transmit_DMA(&g_i2s1, (const uint16_t *)buf, size / 2)) != HAL_OK) {
-    printf("HAL_I2S_Transmit error: %d\r\n", state);
-    return -1;
-  }
-  return 0;
-}
-
-int i2s_send_async(uint8_t *buf, uint32_t size) {
+int i2s_start(uint32_t i2s_dma_threshold) {
   int errorcode = 0;
-
-  if (i2s_mode == I2S_SYNC_MODE) {
-    return -1;
-  }
-
   do {
-    if (I2sQueueState == I2S_QUEUE_RESET) {
+    if (i2s_dma_threshold > I2S_DMA_BUFFER_MAX_SIZE) {
+      i2s_dma_trans_size = I2S_DMA_BUFFER_MAX_SIZE;
+    } else {
+      i2s_dma_trans_size = i2s_dma_threshold;
+    }
+
+    // Create Stream buffer
+    i2s_stream_buffer_handle = xStreamBufferCreateStatic(I2S_STREAMBUFFER_SIZE, i2s_dma_trans_size,
+                                                         i2s_static_stream_bufffer_area, &i2s_static_stream_buffer);
+    if (i2s_stream_buffer_handle == NULL) {
       errorcode = 1;
       break;
     }
 
-    // data buf full
-    if (buf_reserve + size >= I2S_QUEUE_ITEM_SIZE) {
+    // mem init
+    memset(i2s_static_stream_bufffer_area, 0, I2S_STREAMBUFFER_SIZE);
+    memset(i2s_dma_buf0, 0, I2S_DMA_BUFFER_MAX_SIZE);
+    memset(i2s_dma_buf1, 0, I2S_DMA_BUFFER_MAX_SIZE);
 
-      // fill the i2s_queue_data_backup_buf
-      memcpy(i2s_buf2, buf, I2S_QUEUE_ITEM_SIZE - buf_reserve);
-
-      // send the i2s_queue_data_backup_buf data to queue
-      if (xPortIsInsideInterrupt() == pdTRUE) {
-        if (xQueueSendFromISR(Queue_I2S, i2s_buf2, NULL) != pdTRUE) {
-          errorcode = 2;
-          break;
-        }
-      } else {
-        if (xQueueSend(Queue_I2S, i2s_buf2, portMAX_DELAY) != pdTRUE) {
-          errorcode = 2;
-          break;
-        }
-      }
-
-      // modify the buffer ptr and left bytes
-      buf += (I2S_QUEUE_ITEM_SIZE - buf_reserve);
-      size -= (I2S_QUEUE_ITEM_SIZE - buf_reserve);
-
-      // if data enough
-      if (size >= I2S_QUEUE_ITEM_SIZE) {
-        // div pack
-        uint16_t BufferTimes = size / I2S_QUEUE_ITEM_SIZE;
-
-        while (BufferTimes--) {
-
-          // send the i2s_queue_data_backup_buf data
-          if (xPortIsInsideInterrupt() == pdTRUE) {
-            if (xQueueSendFromISR(Queue_I2S, buf, NULL) != pdTRUE) {
-              errorcode = 4;
-              break;
-            }
-          } else {
-            if (xQueueSend(Queue_I2S, buf, portMAX_DELAY) != pdTRUE) {
-              errorcode = 4;
-              break;
-            }
-          }
-
-          // modify address
-          buf += I2S_QUEUE_ITEM_SIZE;
-          size -= I2S_QUEUE_ITEM_SIZE;
-        }
-        if (errorcode)
-          break;
-      } // left size cannot file buf
-
-      // reserve the left data
-      memcpy(i2s_buf2, buf, size);
-      buf_reserve = size;
-    } else {
-      memcpy(i2s_buf2 + buf_reserve, buf, size);
-      buf_reserve += size;
+    // start i2s dma double buffer
+    if (HAL_I2S_Transmit_DMAEx_MultiBuffer(&g_i2s1, i2s_dma_buf0, i2s_dma_buf1, i2s_dma_trans_size / 2) != HAL_OK) {
+      errorcode = 3;
+      break;
     }
+
+  } while (0);
+  if (errorcode)
+    printf("i2s_start errorcode: %d\r\n", errorcode);
+
+  return errorcode;
+}
+
+int i2s_pause() {
+  if (HAL_I2S_DMAPause(&g_i2s1) != HAL_OK) {
+    return -1;
+    printf("HAL_I2S_DMAPause error\r\n");
+  } else {
+    return 0;
+  }
+}
+
+int i2s_resume() {
+  if (HAL_I2S_DMAResume(&g_i2s1) != HAL_OK) {
+    printf("HAL_I2S_DMAResume error\r\n");
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+int i2s_send_buf(uint8_t *buf, uint32_t size) {
+  int errorcode = 0;
+  do {
+
+    if (xPortIsInsideInterrupt() == pdTRUE) {
+      size_t nTx = xStreamBufferSendFromISR(i2s_stream_buffer_handle, buf, size, NULL);
+      if (nTx != size) {
+        printf("xStreamBufferSendFromISR error\r\n");
+        errorcode = 1;
+        break;
+      }
+    } else {
+      size_t nTx = xStreamBufferSend(i2s_stream_buffer_handle, buf, size, portMAX_DELAY);
+      if (nTx != size) {
+        printf("xStreamBufferSend error\r\n");
+        errorcode = 2;
+        break;
+      }
+    }
+
   } while (0);
 
   // report the errorcode
-  if (errorcode)
-    printf("i2s send buf error:%d\r\n", errorcode);
   return errorcode;
 }
 
@@ -329,40 +262,30 @@ HAL_StatusTypeDef HAL_I2S_Transmit_DMAEx_MultiBuffer(I2S_HandleTypeDef *hi2s, ui
 
 void i2s_dma_buf0_cplt(DMA_HandleTypeDef *hdma) {
   // printf("i2s m0 cplt\r\n");
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  // receive data from queue
-  if (xQueueReceiveFromISR(Queue_I2S, i2s_buf0, NULL) == pdTRUE) {
-    I2sQueueState = I2S_QUEUE_BUSY;
+  if (xStreamBufferBytesAvailable(i2s_stream_buffer_handle) >= i2s_dma_trans_size) {
+    xStreamBufferReceiveFromISR(i2s_stream_buffer_handle, i2s_dma_buf0, i2s_dma_trans_size, &xHigherPriorityTaskWoken);
+    SCB_CleanDCache_by_Addr((uint32_t *)i2s_dma_buf0, i2s_dma_trans_size);
   } else {
-    memset(i2s_buf0, 0, I2S_QUEUE_ITEM_SIZE);
-    if (I2sQueueState == I2S_QUEUE_POLLING) {
-      HAL_I2S_DMAPause(&g_i2s1);
-      printf("i2s pause\r\n");
-      I2sQueueState = I2S_QUEUE_PAUSE;
-    } else {
-      I2sQueueState = I2S_QUEUE_POLLING;
-    }
+    // memset (i2s_dma_buf0, 0, i2s_dma_trans_size);
+    rx_stream_not_enough = 1;
   }
-  SCB_CleanDCache_by_Addr((uint32_t *)i2s_buf0, I2S_QUEUE_ITEM_SIZE);
+
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 void i2s_dma_buf1_cplt(DMA_HandleTypeDef *hdma) {
   // printf("i2s m1 cplt\r\n");
-  
-  // receive data from queue
-  if (xQueueReceiveFromISR(Queue_I2S, i2s_buf1, NULL) == pdTRUE) {
-    I2sQueueState = I2S_QUEUE_BUSY;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  if (xStreamBufferBytesAvailable(i2s_stream_buffer_handle) >= i2s_dma_trans_size) {
+    xStreamBufferReceiveFromISR(i2s_stream_buffer_handle, i2s_dma_buf1, i2s_dma_trans_size, &xHigherPriorityTaskWoken);
+    SCB_CleanDCache_by_Addr((uint32_t *)i2s_dma_buf1, i2s_dma_trans_size);
   } else {
-    memset(i2s_buf1, 0, I2S_QUEUE_ITEM_SIZE);
-    if (I2sQueueState == I2S_QUEUE_POLLING) {
-      HAL_I2S_DMAPause(&g_i2s1);
-      printf("i2s pause\r\n");
-      I2sQueueState = I2S_QUEUE_PAUSE;
-    } else {
-      I2sQueueState = I2S_QUEUE_POLLING;
-    }
+    // memset (i2s_dma_buf1, 0, i2s_dma_trans_size);
+    rx_stream_not_enough = 2;
   }
-  SCB_CleanDCache_by_Addr((uint32_t *)i2s_buf1, I2S_QUEUE_ITEM_SIZE);
+
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-void i2s_dma_error(DMA_HandleTypeDef *hdma) {
-  I2sQueueState = I2S_QUEUE_ERROR;
-}
+void i2s_dma_error(DMA_HandleTypeDef *hdma) {}

@@ -11,9 +11,9 @@
 #define TESTDATA ((uint8_t)(0x88))
 #define SDIO_BLOCK_SIZE 512U
 
-__IO static uint8_t SDTxCplt;
-__IO static uint8_t SDRxCplt;
-__IO static uint8_t SDError;
+static __IO uint8_t SDTxCplt;
+static __IO uint8_t SDRxCplt;
+static __IO uint8_t SDError;
 
 #if (SDIO_RW_TEST)
 #define SD_TEST_BUFF_SIZE (uint32_t)(3 * 1024)

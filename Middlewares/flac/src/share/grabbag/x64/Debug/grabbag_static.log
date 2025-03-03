@@ -1,0 +1,11 @@
+﻿  alloc.c
+  cuesheet.c
+  file.c
+  picture.c
+  replaygain.c
+D:\Code\github\flac\src\share\grabbag\picture.c(290,18): warning C4334: “<<”: 32 位移位的结果被隐式转换为 64 位(是否希望进行 64 位移位?)
+D:\Code\github\flac\src\share\grabbag\picture.c(308,59): warning C4244: “函数”: 从“const __int64”转换到“FLAC__uint32”，可能丢失数据
+  seektable.c
+  snprintf.c
+  正在生成代码...
+  grabbag_static.vcxproj -> D:\Code\github\flac\objs\x64\Debug\lib\grabbag_static.lib

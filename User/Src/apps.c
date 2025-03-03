@@ -64,7 +64,7 @@ void check_core_revision(void) {
 }
 
 void thread_start(void *param) {
-  vTaskSuspendAll();
+  taskENTER_CRITICAL();
 
   /* User code begin */
   tim_init(); // HAL TimeBase Inc
@@ -86,9 +86,9 @@ void thread_start(void *param) {
   //  ldtc_init() --> lcd_init() --> lv_port_disp_init()
   //  touch_init();
 
-  // lv_init();
-  // lv_port_disp_init();
-  // lv_port_indev_init();
+  //lv_init();
+  //lv_port_disp_init();
+  //lv_port_indev_init();
   // lv_demo_music();
   // lv_demo_benchmark();
   // lv_demo_flex_layout();
@@ -105,14 +105,14 @@ void thread_start(void *param) {
   // lcd_show_charCN(292, 150, 6);
 
   xTaskCreate(thread_app_main, "app_main", 1024, NULL, 10, &ThreadAppMain);
-  // xTaskCreate(thread_lvgl_loop, "lvgl_loop", 1024, NULL, 3, &ThreadLvgl);
+  xTaskCreate(thread_lvgl_loop, "lvgl_loop", 1024, NULL, 3, &ThreadLvgl);
 
-  xTaskResumeAll();
+  taskEXIT_CRITICAL();
   vTaskDelete(NULL);
 }
 
 void thread_app_main(void *param) {
-  static uint8_t i2s_tx[4096] __ATTR_SDRAM;
+  static uint8_t i2s_tx[1800] __ATTR_SDRAM __ALIGNED(4);
   FIL fl;
   FRESULT res = 0;
   UINT nbr = 0;
@@ -123,28 +123,41 @@ void thread_app_main(void *param) {
     printf("sdio interrupt times:%d\r\n", int_num);
   }
 
+  // res = f_open(&fl, "/SD/MUSIC/output.pcm", FA_READ);
+
   // config i2s
   I2S_InitTypeDef i2s_conf;
   DMA_InitTypeDef i2s_dma_conf;
   i2s_config_default(&i2s_conf);
   i2s_dma_config_default(&i2s_dma_conf);
   i2s_conf.AudioFreq = I2S_AUDIOFREQ_48K;
-  i2s_init(&i2s_conf, &i2s_dma_conf, I2S_ASYNC_MODE);
-  i2s_start();
+  i2s_init(&i2s_conf, &i2s_dma_conf);
+  //i2s_start(1920);
 
-  audio_v2_init(0, USB2_OTG_FS_PERIPH_BASE);
-
-  //res = f_open(&fl, "/SD/MUSIC/光年之外.pcm", FA_READ);
-
+  //audio_v2_init(0, USB2_OTG_FS_PERIPH_BASE);
+  extern int decode_flac(const char *flacname, const char *pcmname);
+  decode_flac("/SD/MUSIC/光年之外.flac", "/SD/MUSIC/光年之外.pcm");
+  
   for (;;) {
     HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     vTaskDelay(500);
-    // printf("send i2s 1024 Bytes...\r\n");
-    // if (!res) {
-    //   res = f_read(&fl, i2s_tx, sizeof(i2s_tx), &nbr);
-    //   i2s_send_async(i2s_tx, sizeof(i2s_tx));
+    // if (rx_stream_not_enough) {
+    //   printf("rx_stream_not_enough %d\r\n", rx_stream_not_enough);
+    //   rx_stream_not_enough = 0;
     // }
-    // vTaskDelay(10);
+    //  printf("send i2s 1024 Bytes...\r\n");
+    // if (!res) {
+    //  res = f_read (&fl, i2s_tx, sizeof (i2s_tx), &nbr);
+    //  if (i2s_send_async (i2s_tx, sizeof (i2s_tx)) != 0) {
+    //    printf ("i2s_send_async error\r\n");
+    //  }
+    //}
+    // vTaskDelay (2);
+    // if (nbr == 0) {
+    //  f_close (&fl);
+    //  HAL_GPIO_TogglePin (LED_GPIO_Port, LED_Pin);
+    //  vTaskSuspend (NULL);
+    //}
   }
 }
 

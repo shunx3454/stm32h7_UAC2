@@ -1,0 +1,12 @@
+﻿  main.c
+  operations.c
+  operations_shorthand_cuesheet.c
+  operations_shorthand_picture.c
+  operations_shorthand_seektable.c
+  operations_shorthand_streaminfo.c
+  operations_shorthand_vorbiscomment.c
+  options.c
+  usage.c
+  utils.c
+  正在生成代码...
+LINK : fatal error LNK1104: 无法打开文件“D:\Code\github\flac\objs\x64\Debug\lib\libogg_static.lib”
